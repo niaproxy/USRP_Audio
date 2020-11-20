@@ -27,9 +27,10 @@ import pyaudio
 import webrtcvad
 
 ipAddress = "127.0.0.1"
-
+keyup = False
 def rxAudioStream():
     global ipAddress
+    global keyup
     print('Start audio thread')
     
     FORMAT = pyaudio.paInt16
@@ -117,22 +118,23 @@ def txAudioStream():
     seq = 0
     while True:
         try:
-            audio = stream.read(160, exception_on_overflow=False)
-            ptt = vad.is_speech(audio, 8000)
-            lastPtt = ptt    
-            if ptt != lastPtt:
-                usrp = 'USRP' + struct.pack('>iiiiiii',seq, 0, ptt, 0, 0, 0, 0)
-                udp.sendto(usrp, (ipAddress, 34001))
-                seq = seq + 1
-                print 'PTT: {}'.format(ptt)
-            lastPtt = ptt
-            if ptt:
-                usrp = 'USRP' + struct.pack('>iiiiiii',seq, 0, ptt, 0, 0, 0, 0) + audio
-                udp.sendto(usrp, (ipAddress, 34001))
-                #print 'transmitting'
-                seq = seq + 1
+	     if keyup == False:
+              audio = stream.read(160, exception_on_overflow=False)
+              ptt = vad.is_speech(audio, 8000)
+              lastPtt = ptt    
+              if ptt != lastPtt:
+                  usrp = 'USRP' + struct.pack('>iiiiiii',seq, 0, ptt, 0, 0, 0, 0)
+                  udp.sendto(usrp, (ipAddress, 34001))
+                  seq = seq + 1
+                  print 'PTT: {}'.format(ptt)
+                  lastPtt = ptt
+              if ptt:
+                 usrp = 'USRP' + struct.pack('>iiiiiii',seq, 0, ptt, 0, 0, 0, 0) + audio
+                 udp.sendto(usrp, (ipAddress, 34001))
+                 #print 'transmitting'
+                 seq = seq + 1
         except:
-            print("overflow")
+              print("overflow")
 
 def _find_getch():
     try:
